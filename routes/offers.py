@@ -1,37 +1,52 @@
 from sanic import response
 import sqlite3
 from pydantic import BaseModel, ValidationError
+from typing import Optional, List
 
 conn = sqlite3.connect("users.db")  # или :memory: чтобы сохранить в RAM
 
-class Offer_id(BaseModel):
-    offer_id: int
 
-class User_id(BaseModel):
+class ResponseUser(BaseModel):
     user_id: int
+
+
+class ResponseOffer(BaseModel):
+    id: int
+
+
+class ResponseOffers(BaseModel):
+    offers: List[ResponseOffer]
+
+
+class RequestSearchOffers(BaseModel):
+    user_id: Optional[int] = None
+    offer_id: Optional[int] = None
+
+
+class ResponseSearchOffers(BaseModel):
+    users: Optional[List[ResponseUser]]
+    offers: Optional[List[ResponseOffers]]
+
+
+class ResponseError(BaseModel):
+    error: str
+
 
 def handler_offers(request):
     cursor = conn.cursor()
-    offer_id = request.json.get('offer_id')
-    user_id = request.json.get('user_id')
 
-    if offer_id:
-        try:
-            offers = Offer_id(**{"offer_id": offer_id})
-        except ValidationError as e:
-            return response.json({"error": e.errors()})
+    try:
+        request = RequestSearchOffers(**request.json)
+    except ValidationError as e:
+        return response.json({"error": e.errors()})
 
-        cursor.execute(f"SELECT * FROM offers WHERE id={offer_id}")
-        return response.json({f"offer_{offer_id}": cursor.fetchone()})
+    if request.offer_id is not None:
+        cursor.execute(f"SELECT * FROM offers WHERE id={request.offer_id}")
+        return response.json({f"offer_{request.offer_id}": cursor.fetchone()})
 
-    elif user_id:
-        try:
-            offers = User_id(**{"user_id": user_id})
-        except ValidationError as e:
-            return response.json({"error": e.errors()})
-
-        cursor.execute(f"SELECT * FROM offers WHERE user_id={user_id}")
+    elif request.user_id is not None:
+        cursor.execute(f"SELECT * FROM offers WHERE user_id={request.user_id}")
         return response.json({"offers": cursor.fetchall()})
 
     else:
-        return response.json({"Message": "Use offer_id or user_id"}, status=404)
+        return response.json(ResponseError(error="Use offer_id or user_id").dict(), status=404)

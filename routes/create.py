@@ -19,12 +19,7 @@ def handler_create(request):
         return response.json({"error": "Refresh Token"})
 
     title = request.json.get('title')
-    if title is None:
-        return response.json({'error': 'title is required'}, status=400)
-
     text = request.json.get('text')
-    if text is None:
-        return response.json({'error': 'text is required'}, status=400)
 
     try:
         offer = Offer(**{"title": title, "text": text})

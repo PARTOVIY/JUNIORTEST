@@ -12,12 +12,7 @@ class User(BaseModel):
 
 def handler_auth(request):
     username = request.json.get('username')
-    if username is None:
-        return response.json({'error': 'username is required'}, status=400)
-
     password = request.json.get('password')
-    if password is None:
-        return response.json({'error': 'password is required'}, status=400)
 
     try:
         user = User(**{"username": username, "password": password})
