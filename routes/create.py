@@ -1,9 +1,13 @@
-from sanic import Sanic
 from sanic import response
 import sqlite3
 import jwt
+from pydantic import BaseModel, ValidationError
 
 conn = sqlite3.connect("users.db")  # или :memory: чтобы сохранить в RAM
+
+class Offer(BaseModel):
+    title: str
+    text: str
 
 def handler_create(request):
     auth = request.headers.get("Authorization")
@@ -21,6 +25,11 @@ def handler_create(request):
     text = request.json.get('text')
     if text is None:
         return response.json({'error': 'text is required'}, status=400)
+
+    try:
+        offer = Offer(**{"title": title, "text": text})
+    except ValidationError as e:
+        return response.json({"error": e.errors()})
 
     cursor = conn.cursor()
     cursor.executemany('INSERT INTO offers (user_id, title, text) VALUES (?,?,?)', [(get_id["id"], title, text)])

@@ -1,4 +1,3 @@
-from sanic import Sanic
 from sanic import response
 import sqlite3
 import jwt

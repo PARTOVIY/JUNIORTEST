@@ -1,10 +1,5 @@
-from crypt import methods
-
 from sanic import Sanic
-from sanic import response
-import jwt
 import sqlite3
-import datetime
 import routes
 
 app = Sanic(__name__)
