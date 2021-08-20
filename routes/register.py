@@ -1,6 +1,7 @@
 from sanic import response
 import sqlite3
 from pydantic import BaseModel, ValidationError, EmailStr
+from typing import List
 
 conn = sqlite3.connect("users.db")  # или :memory: чтобы сохранить в RAM
 
@@ -11,23 +12,23 @@ class User(BaseModel):
     email: EmailStr
 
 
+class ResponseError(BaseModel):
+    error: List
+
+
 def handler_register(request):
-    username = request.json.get('username')
-    password = request.json.get('password')
-    email = request.json.get('email')
-
     try:
-        user = User(**{"username": username, "password": password, "email": email})
+        user = User(**{"username": request.username, "password": request.password, "email": request.email})
     except ValidationError as e:
-        return response.json({"error": e.errors()})
+        return response.json(ResponseError(error={e.errors()}).dict())
 
     cursor = conn.cursor()
-    cursor.execute(f"SELECT * FROM users WHERE email='{email}'")
+    cursor.execute(f"SELECT * FROM users WHERE email='{request.email}'")
     if cursor.fetchone() is not None:
-        return response.json({'error': 'email is busy'}, status=400)
+        return response.json(ResponseError(error={"Email is busy!"}).dict(), status=400)
 
     cursor = conn.cursor()
-    cursor.executemany('INSERT INTO users (username, password, email) VALUES (?,?,?)', [(username, password, email)])
+    cursor.executemany('INSERT INTO users (username, password, email) VALUES (?,?,?)', [(request.username, request.password, request.email)])
     cursor.close()
     conn.commit()
 
