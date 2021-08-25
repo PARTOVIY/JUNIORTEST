@@ -31,7 +31,8 @@ def handler_create(request):
         return response.json(ResponseError(error={e.errors()}).dict())
 
     cursor = conn.cursor()
-    cursor.executemany('INSERT INTO offers (user_id, title, text) VALUES (?,?,?)', [(get_id["id"], offer.title, offer.text)])
+    cursor.executemany('INSERT INTO offers (user_id, title, text) VALUES (?,?,?)',
+                       [(get_id["id"], offer.title, offer.text)])
     cursor.close()
     conn.commit()
 
